@@ -14,6 +14,7 @@ class Connect4:
         self.data = []
         self.clear()
         self.lastCheckerLocation = {'row': None, 'column': None}
+        self.lowestEmptyCell = [-1] * width
 
    # This method defines the string representation of an object from class
    # Connect4.    
@@ -46,14 +47,11 @@ class Connect4:
     def addMove(self, col, ox):
         if not self.allowsMove(col):
             return
-        row = -1
-        while True:
-            if self.data[row][col] == ' ':
-                break
-            row += -1
+        row = self.lowestEmptyCell[col]
         self.data[row][col] = ox
         self.lastCheckerLocation['row'] = row
         self.lastCheckerLocation['column'] = col
+        self.lowestEmptyCell[col] -= 1
 
     # This method creates an empty board.
     def clear(self):
@@ -68,12 +66,13 @@ class Connect4:
     # This method removes the top checker of a given column.
     # If given column is empty then this method does nothing.
     def delMove(self, col):
-        if col not in range(self.width):
+        row = self.lowestEmptyCell[col]
+        if col < 0 or col >= self.width:
             return
-        for row in range(self.height):
-            if self.data[row][col] != ' ':
-                self.data[row][col] = ' '
-                break
+        row = self.lowestEmptyCell[col]
+        if row == -1: return
+        self.data[row+1][col] = ' '
+        self.lowestEmptyCell[col] += 1
 
     # This method determines if a given column is a legal move.
     def allowsMove(self, col):
@@ -312,7 +311,7 @@ class DemoScreen:
         self.frame.grid(sticky = 'e')
 
         self.board = Connect4(7, 6)
-        self.aiPlayer = Player('o', 6)
+        self.aiPlayer = Player('o', 7)
         self.userChecker = self.aiPlayer.opponentChecker\
         (self.aiPlayer.checker)
 
