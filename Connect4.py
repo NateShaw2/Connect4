@@ -7,13 +7,16 @@ from tkinter import *
 
 class Connect4:
      
+    # This method creates the variables for the Connect4 class.     
     def __init__(self, width, height, window=None):
         self.width = width
         self.height = height
         self.data = []
         self.clear()
         self.lastCheckerLocation = {'row': None, 'column': None}
-     
+
+   # This method defines the string representation of an object from class
+   # Connect4.    
     def __repr__(self):
         s = ''
         numberedColumns = []
@@ -37,6 +40,9 @@ class Connect4:
             s += '\n'
         return s  
 
+    # This method adds a checker of type ox to the first row in a
+    # specified column without a checker if it's a legal move.
+    # This method also updates the location of the last added checker.
     def addMove(self, col, ox):
         if not self.allowsMove(col):
             return
@@ -49,6 +55,7 @@ class Connect4:
         self.lastCheckerLocation['row'] = row
         self.lastCheckerLocation['column'] = col
 
+    # This method creates an empty board.
     def clear(self):
         self.data = []
         self.lastCheckerLocation = {'row': None, 'column': None}
@@ -58,6 +65,8 @@ class Connect4:
                 boardRow += [' '] 
             self.data += [boardRow]
 
+    # This method removes the top checker of a given column.
+    # If given column is empty then this method does nothing.
     def delMove(self, col):
         if col not in range(self.width):
             return
@@ -66,6 +75,7 @@ class Connect4:
                 self.data[row][col] = ' '
                 break
 
+    # This method determines if a given column is a legal move.
     def allowsMove(self, col):
         if col not in range(self.width):
             return False
@@ -74,12 +84,17 @@ class Connect4:
         else:
             return True
 
+    # This method determines if the board is full.
     def isFull(self):
         for col in range(self.width):
             if self.allowsMove(col):
                 return False
         return True
 
+    # This method determines if someone won the game by determining if the
+    # last checker that was added is a part of a four in a row with checkers of
+    # type ox.
+    # TODO: Make the winsFor function less gnarly.
     def winsFor(self, ox):
         for shift in range(4):
             if self.lastCheckerLocation['column'] - 3 + shift  < 0 or\
@@ -137,6 +152,7 @@ class Connect4:
                 return True
         return False
 
+    # This method runs a game of Connect 4 between two human players.
     def hostGame(self):
         print('\nHello, welcome to Connect 4!')
         checkerType = 'o', 'x'
@@ -190,10 +206,12 @@ class Player:
         self.checker = ox
         self.ply = ply
 
+    # String representation for AI
     def __repr__(self):
         return 'checker type: ' + self.checker +\
         '\nply level: ' + str(self.ply)
 
+    # Determines AI next move. Ply is the number of turns to look ahead.
     def nextMove(self, board, ox, ply):
         scores = self.scoresFor(board, ox, ply)
         if ply == self.ply: 
@@ -207,6 +225,7 @@ class Player:
                 if scores['scoresList'][-1] == maxScore:
                     return len(scores['scoresList']) - 1
                 scores['scoresList'] = scores['scoresList'][:-1]
+        # Heuristic to play center column(s) if maxScore is 50
         elif maxScore == 50 and ply >= 4 and board.width >= 7:
             for i in range(3, board.width - 3):
                 if scores['scoresList'][i] == 50:
@@ -226,6 +245,7 @@ class Player:
                 maxScoreCol.append(col)
         return choice(maxScoreCol)
 
+    # Gets scores for each column. Ply is the number of turns to look ahead.
     def scoresFor(self, board, ox, ply):      
         scores = {'scoresList': [], 'loseColumns': [], 'losingTurns': []}
         addedMoves = []
@@ -278,6 +298,7 @@ class Player:
                     addedMoves = addedMoves[:-1]
         return scores
 
+    # Determines opponent checker
     def opponentChecker(self, ox):
         if ox == 'o':
             return 'x'
@@ -340,19 +361,23 @@ class DemoScreen:
         self.draw.bind('<Button-1>', self.mouseInput)
         self.draw.bind('<ButtonRelease-1>', self.buttonRelease)
 
+    # Gets input from the mouse
     def mouseInput(self, event):
         col = int(event.x/self.diameter)
         self.userCol = col
         self.didUserPickCol.set(True)
 
+    # Sets buttonReleased to true
     def buttonRelease(self, event):
         self.isButtonReleased.set(True)
 
+    # Disables mouse button?
     def disableButton(self, event):
         self.isButtonReleased.set(True)
         self.newGame.unbind('<Button-1>')
         self.newGame['state'] = DISABLED
-        
+
+    # Clears a connect4 board
     def emptyBoardDisplay(self):
         y = self.canvasWidth / (13 * self.size)
         for row in range(self.board.height):
@@ -365,7 +390,8 @@ class DemoScreen:
                 x += self.diameter
             self.circles += [circleRow]
             y += self.diameter
-    
+
+    # Initializes connect4 game
     def setupGame(self, event):
         self.isButtonReleased.set(False)
         self.board.clear()
@@ -376,7 +402,8 @@ class DemoScreen:
             self.label['text'] = 'The AI is thinking...'
             self.window.wait_variable(self.isButtonReleased)
         self.displayGame(nextChecker)
-        
+    
+    # Runs a connect4 game
     def displayGame(self, nextChecker, userError = False):
         if userError:
             self.label['text'] = 'That column is full,\
@@ -405,6 +432,7 @@ class DemoScreen:
             else:
                 self.displayGame(self.userChecker)
 
+    # Place checker based on the column player clicks.
     def placeUserChecker(self, ox):
         self.didUserPickCol.set(False)
         self.isButtonReleased.set(False)
@@ -424,11 +452,13 @@ class DemoScreen:
                 self.window.wait_variable(self.isButtonReleased)
                 self.displayGame(self.aiPlayer.checker)
 
+    # Determines the color of chip
     def getColor(self, ox):
         if ox == 'o':
             return 'black'
         return 'red'
 
+    # Quits the game 
     def quitGame(self):
         self.didUserPickCol.set(True)
         self.window.destroy()
