@@ -4,6 +4,7 @@
 
 from random import choice
 from tkinter import *
+import time
 
 class Connect4:
      
@@ -224,6 +225,7 @@ class Player:
         if ply == self.ply: 
             print(board)
             print(scores)
+            print(f"Ply: {ply}")
             print()
         maxScoreCol = []
         maxScore = max(scores['scoresList'])
@@ -322,6 +324,7 @@ class DemoScreen:
         self.aiPlayer = Player('o', 6)
         self.userChecker = self.aiPlayer.opponentChecker\
         (self.aiPlayer.checker)
+        self.iterativeDeepening = True
 
         if window.winfo_screenheight() > 480:
             self.canvasWidth = 480 + (window.winfo_screenheight() - 480) / 3
@@ -425,9 +428,21 @@ class DemoScreen:
  click on a column to make your move.'
             self.placeUserChecker(self.userChecker)
         else:
-            self.board.addMove(self.aiPlayer.nextMove(self.board,
-            self.aiPlayer.checker, self.aiPlayer.ply),
-            self.aiPlayer.checker)
+            total_time = 0
+            ply_time = 0
+            original_ply = self.aiPlayer.ply
+            while total_time < 1 and ply_time < 0.2 and \
+                self.aiPlayer.ply < 20:
+                start_time = time.time()
+                move = self.aiPlayer.nextMove(self.board,
+                self.aiPlayer.checker, self.aiPlayer.ply)
+                end_time = time.time()
+                ply_time = end_time - start_time
+                total_time += ply_time
+                if not self.iterativeDeepening: break
+                self.aiPlayer.ply += 1
+            self.aiPlayer.ply = original_ply
+            self.board.addMove(move, self.aiPlayer.checker)
             self.draw.itemconfig(self.circles[
             self.board.lastCheckerLocation['row']]\
             [self.board.lastCheckerLocation['column']],\
