@@ -14,6 +14,7 @@ class Connect4:
         self.data = []
         self.clear()
         self.lastCheckerLocation = {'row': None, 'column': None}
+        self.lowestEmptyCell = [-1] * width
 
    # This method defines the string representation of an object from class
    # Connect4.    
@@ -46,19 +47,17 @@ class Connect4:
     def addMove(self, col, ox):
         if not self.allowsMove(col):
             return
-        row = -1
-        while True:
-            if self.data[row][col] == ' ':
-                break
-            row += -1
+        row = self.lowestEmptyCell[col]
         self.data[row][col] = ox
         self.lastCheckerLocation['row'] = row
         self.lastCheckerLocation['column'] = col
+        self.lowestEmptyCell[col] -= 1
 
     # This method creates an empty board.
     def clear(self):
         self.data = []
         self.lastCheckerLocation = {'row': None, 'column': None}
+        self.lowestEmptyCell = [-1] * self.width
         for row in range(self.height):
             boardRow = []
             for col in range(self.width):
@@ -68,12 +67,13 @@ class Connect4:
     # This method removes the top checker of a given column.
     # If given column is empty then this method does nothing.
     def delMove(self, col):
-        if col not in range(self.width):
+        row = self.lowestEmptyCell[col]
+        if col < 0 or col >= self.width:
             return
-        for row in range(self.height):
-            if self.data[row][col] != ' ':
-                self.data[row][col] = ' '
-                break
+        row = self.lowestEmptyCell[col]
+        if row == -1: return
+        self.data[row+1][col] = ' '
+        self.lowestEmptyCell[col] += 1
 
     # This method determines if a given column is a legal move.
     def allowsMove(self, col):
@@ -94,61 +94,68 @@ class Connect4:
     # This method determines if someone won the game by determining if the
     # last checker that was added is a part of a four in a row with checkers of
     # type ox.
-    # TODO: Make the winsFor function less gnarly.
     def winsFor(self, ox):
-        for shift in range(4):
-            if self.lastCheckerLocation['column'] - 3 + shift  < 0 or\
-            self.lastCheckerLocation['column'] + shift  > self.width - 1 or\
-            self.lastCheckerLocation['row'] + shift  > -1 or\
-            self.lastCheckerLocation['row'] - 3 + shift  < -1 * self.height:
-                pass
-            elif self.data[self.lastCheckerLocation['row'] - 3 + shift]\
-            [self.lastCheckerLocation['column'] - 3 + shift] == ox and\
-            self.data[self.lastCheckerLocation['row'] - 2 + shift]\
-            [self.lastCheckerLocation['column'] - 2 + shift] == ox and\
-            self.data[self.lastCheckerLocation['row'] - 1 + shift]\
-            [self.lastCheckerLocation['column'] - 1 + shift] == ox and\
-            self.data[self.lastCheckerLocation['row'] + shift]\
-            [self.lastCheckerLocation['column'] + shift] == ox:
-                return True
+        # Row is positive
+        row = self.lastCheckerLocation['row'] + self.height
+        col = self.lastCheckerLocation['column']
 
-            if self.lastCheckerLocation['column'] - 3 + shift < 0 or\
-            self.lastCheckerLocation['column'] + shift > self.width - 1 or\
-            self.lastCheckerLocation['row'] + 3 - shift > -1 or\
-            self.lastCheckerLocation['row'] - shift < -1 * self.height:
-                pass
-            elif self.data[self.lastCheckerLocation['row'] + 3 - shift]\
-            [self.lastCheckerLocation['column'] - 3 + shift] == ox and\
-            self.data[self.lastCheckerLocation['row'] + 2 - shift]\
-            [self.lastCheckerLocation['column'] - 2 + shift] == ox and\
-            self.data[self.lastCheckerLocation['row'] + 1 - shift]\
-            [self.lastCheckerLocation['column'] - 1 + shift] == ox and\
-            self.data[self.lastCheckerLocation['row'] - shift]\
-            [self.lastCheckerLocation['column'] + shift] == ox:
-                return True
+        num_in_row = 1
+        for shift in range(1, 4):
+            new_row = row - shift
+            new_col = col - shift
+            if new_row < 0 or new_col < 0 or self.data[new_row][new_col] != ox:
+                break
+            num_in_row += 1
 
-            if self.lastCheckerLocation['column'] - 3 + shift < 0 or\
-            self.lastCheckerLocation['column'] + shift > self.width - 1:
-                pass
-            elif self.data[self.lastCheckerLocation['row']]\
-            [self.lastCheckerLocation['column'] - 3 + shift] == ox and\
-            self.data[self.lastCheckerLocation['row']]\
-            [self.lastCheckerLocation['column'] - 2 + shift] == ox and\
-            self.data[self.lastCheckerLocation['row']]\
-            [self.lastCheckerLocation['column'] - 1 + shift] == ox and\
-            self.data[self.lastCheckerLocation['row']]\
-            [self.lastCheckerLocation['column'] + shift] == ox:
-                return True
+        for shift in range(1, 4):
+            new_row = row + shift
+            new_col = col + shift
+            if new_row >= self.height or new_col >= self.width or self.data[new_row][new_col] != ox:
+                break
+            num_in_row += 1
 
-        if self.lastCheckerLocation['row'] < -3:
-            if self.data[self.lastCheckerLocation['row']]\
-            [self.lastCheckerLocation['column']] == ox and\
-            self.data[self.lastCheckerLocation['row'] + 1]\
-            [self.lastCheckerLocation['column']] == ox and\
-            self.data[self.lastCheckerLocation['row'] + 2]\
-            [self.lastCheckerLocation['column']] == ox and\
-            self.data[self.lastCheckerLocation['row'] + 3]\
-            [self.lastCheckerLocation['column']] == ox:
+        if num_in_row >= 4: return True
+
+        num_in_row = 1
+        for shift in range(1, 4):
+            new_row = row + shift
+            new_col = col - shift
+            if new_row >= self.height or new_col < 0 or self.data[new_row][new_col] != ox:
+                break
+            num_in_row += 1
+
+        for shift in range(1, 4):
+            new_row = row - shift
+            new_col = col + shift
+            if new_row < 0 or new_col >= self.width or self.data[new_row][new_col] != ox:
+                break
+            num_in_row += 1
+
+        if num_in_row >= 4: return True
+
+        num_in_row = 1
+        new_row = row
+        for shift in range(1, 4):
+            new_col = col - shift
+            if new_col < 0 or self.data[new_row][new_col] != ox:
+                break
+            num_in_row += 1
+
+        for shift in range(1, 4):
+            new_col = col + shift
+            if new_col >= self.width or self.data[new_row][new_col] != ox:
+                break
+            num_in_row += 1
+
+        if num_in_row >= 4: return True
+
+        # Row is negative
+        row = self.lastCheckerLocation['row']
+        if row < -3:
+            if self.data[row][col] == ox and \
+            self.data[row + 1][col] == ox and \
+            self.data[row + 2][col] == ox and \
+            self.data[row + 3][col] == ox:
                 return True
         return False
 
